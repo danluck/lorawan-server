@@ -272,9 +272,11 @@ send_device_time([{_MAC, #rxq{time=Time, tmms=undefined}}|_]) ->
     % we got GPS time, but not milliseconds
     {device_time_ans, MsSinceEpoch};
 send_device_time([{_MAC, #rxq{tmms=MsSinceEpoch}}|_]) ->
-    lager:debug("DeviceTimeAns: time: ~B", [MsSinceEpoch]),
-    % this is the easiest
-    {device_time_ans, MsSinceEpoch}.
+    % Local fix of Issue "DeviceTimeAns MAC command return incorrect time value to end node":
+    % https://github.com/gotthardp/lorawan-server/issues/809
+    TemporaryTimeMs = time_to_gps(lorawan_utils:precise_universal_time()),
+    lager:debug("DeviceTimeAns: time(ms): ~B (from UTC)", [TemporaryTimeMs]),
+    {device_time_ans, TemporaryTimeMs}.
 
 time_to_gps({Date, {Hours, Min, Secs}}) ->
     TotalSecs = calendar:datetime_to_gregorian_seconds({Date, {Hours, Min, trunc(Secs)}})
