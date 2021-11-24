@@ -267,7 +267,7 @@ send_device_time([{_MAC, #rxq{time=undefined}}|_]) ->
     % no time provided by the gateway, we do our best
     {device_time_ans, MsSinceEpoch};
 send_device_time([{_MAC, #rxq{time=Time, tmms=undefined}}|_]) ->
-    MsSinceEpoch = time_to_gps(Time),
+    MsSinceEpoch = time_to_gps(Time) + (17 * 1000),  % 17 leap seconds added only if time was received from GPS
     lager:debug("DeviceTimeAns: time: ~B (from gateway)", [MsSinceEpoch]),
     % we got GPS time, but not milliseconds
     {device_time_ans, MsSinceEpoch};
@@ -280,8 +280,7 @@ send_device_time([{_MAC, #rxq{tmms=MsSinceEpoch}}|_]) ->
 
 time_to_gps({Date, {Hours, Min, Secs}}) ->
     TotalSecs = calendar:datetime_to_gregorian_seconds({Date, {Hours, Min, trunc(Secs)}})
-            - calendar:datetime_to_gregorian_seconds({{1980, 1, 6}, {0, 0, 0}})
-            + 17, % leap seconds
+            - calendar:datetime_to_gregorian_seconds({{1980, 1, 6}, {0, 0, 0}}),
     trunc(1000*(TotalSecs + (Secs - trunc(Secs)))). % ms
 
 
